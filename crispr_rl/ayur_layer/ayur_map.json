@@ -1,0 +1,167 @@
+{
+  "doshas": {
+    "vata": {
+      "description": "Governs movement, nervous system, and communication",
+      "primary_systems": ["neural signaling", "neurotransmission", "ion transport"],
+      "gene_categories": [
+        "SCN1A", "CACNA1A", "KCNQ2", "SLC6A4", "BDNF",
+        "DRD2", "GABRA1", "GRIN2B", "NRXN1", "SHANK3"
+      ],
+      "go_terms": [
+        "GO:0007268", "GO:0019226", "GO:0007271",
+        "GO:0051966", "GO:0050804"
+      ],
+      "stability_weight": 1.3,
+      "edit_caution": "high",
+      "harmony_keywords": ["neural balance", "calm", "stability", "grounding"]
+    },
+    "pitta": {
+      "description": "Governs metabolism, transformation, and enzymatic activity",
+      "primary_systems": ["metabolism", "inflammation", "enzymatic catalysis", "digestion"],
+      "gene_categories": [
+        "CYP1A2", "CYP2D6", "PPARG", "NFKB1", "TNF",
+        "IL6", "MTOR", "AMPK", "FASN", "LDLR"
+      ],
+      "go_terms": [
+        "GO:0008152", "GO:0006954", "GO:0006629",
+        "GO:0009056", "GO:0055114"
+      ],
+      "stability_weight": 1.1,
+      "edit_caution": "medium",
+      "harmony_keywords": ["focus", "clarity", "transformation", "precision"]
+    },
+    "kapha": {
+      "description": "Governs structure, growth, cohesion, and lubrication",
+      "primary_systems": ["cell growth", "extracellular matrix", "immunity", "development"],
+      "gene_categories": [
+        "COL1A1", "COL3A1", "MUC5B", "TGFB1", "IGF1",
+        "MYH9", "FBN1", "ELN", "ITGA5", "VEGFA"
+      ],
+      "go_terms": [
+        "GO:0007049", "GO:0030198", "GO:0002376",
+        "GO:0001501", "GO:0048731"
+      ],
+      "stability_weight": 0.9,
+      "edit_caution": "low",
+      "harmony_keywords": ["balance", "nourishment", "strength", "cohesion"]
+    }
+  },
+  "marma_organ_gene_map": {
+    "hridaya": {
+      "organ": "heart",
+      "marma_point": "Hridaya",
+      "location": "chest center",
+      "linked_genes": ["MYH7", "TNNT2", "SCN5A", "LMNA", "PLN"],
+      "dosha_affinity": "vata_pitta",
+      "edit_sensitivity": 0.95,
+      "notes": "Central prana seat; edits here require highest caution"
+    },
+    "sthapani": {
+      "organ": "brain_frontal",
+      "marma_point": "Sthapani",
+      "location": "forehead center (third eye)",
+      "linked_genes": ["BDNF", "NTRK2", "SIRT1", "FOXO3", "CLOCK"],
+      "dosha_affinity": "vata",
+      "edit_sensitivity": 0.90,
+      "notes": "Higher cognitive function; precision is paramount"
+    },
+    "nabhi": {
+      "organ": "gut_microbiome_axis",
+      "marma_point": "Nabhi",
+      "location": "navel",
+      "linked_genes": ["PPARG", "FTO", "MC4R", "ADIPOQ", "LEP"],
+      "dosha_affinity": "pitta",
+      "edit_sensitivity": 0.75,
+      "notes": "Metabolic core; impacts prakriti balance most directly"
+    },
+    "basti": {
+      "organ": "reproductive_urinary",
+      "marma_point": "Basti",
+      "location": "lower abdomen",
+      "linked_genes": ["AR", "ESR1", "BRCA1", "BRCA2", "TP53"],
+      "dosha_affinity": "kapha",
+      "edit_sensitivity": 0.85,
+      "notes": "Life-force reservoir; apana vayu seat"
+    },
+    "gulpha": {
+      "organ": "adrenal_endocrine",
+      "marma_point": "Gulpha",
+      "location": "ankle joint / endocrine axis",
+      "linked_genes": ["CRH", "ACTH", "CORTISOL_RECEPTOR", "NR3C1", "HSD11B1"],
+      "dosha_affinity": "pitta_vata",
+      "edit_sensitivity": 0.80,
+      "notes": "Stress response axis; ojas depletion risk if disrupted"
+    },
+    "talahrida": {
+      "organ": "liver_detox",
+      "marma_point": "Talahrida",
+      "location": "palm center / liver reflex",
+      "linked_genes": ["CYP3A4", "CYP2E1", "GSTM1", "UGT1A1", "HMOX1"],
+      "dosha_affinity": "pitta",
+      "edit_sensitivity": 0.70,
+      "notes": "Detoxification pathways; pitta regulation seat"
+    },
+    "krikatika": {
+      "organ": "thyroid_cervical",
+      "marma_point": "Krikatika",
+      "location": "nape of neck / thyroid axis",
+      "linked_genes": ["TSHR", "THRA", "DIO2", "TPO", "TG"],
+      "dosha_affinity": "kapha_vata",
+      "edit_sensitivity": 0.78,
+      "notes": "Metabolic rate regulation; vyana vayu center"
+    }
+  },
+  "prakriti_profiles": {
+    "vata_dominant": {
+      "doshas": {"vata": 0.6, "pitta": 0.25, "kapha": 0.15},
+      "therapeutic_focus": "neural stability, grounding, warmth",
+      "gene_priority_boost": ["SCN1A", "BDNF", "DRD2", "GABRA1"],
+      "marma_priority": ["sthapani", "hridaya"]
+    },
+    "pitta_dominant": {
+      "doshas": {"vata": 0.2, "pitta": 0.6, "kapha": 0.2},
+      "therapeutic_focus": "metabolic balance, anti-inflammation, clarity",
+      "gene_priority_boost": ["PPARG", "NFKB1", "TNF", "CYP1A2"],
+      "marma_priority": ["nabhi", "talahrida"]
+    },
+    "kapha_dominant": {
+      "doshas": {"vata": 0.15, "pitta": 0.25, "kapha": 0.6},
+      "therapeutic_focus": "growth regulation, immune modulation, lightness",
+      "gene_priority_boost": ["TGFB1", "IGF1", "VEGFA", "COL1A1"],
+      "marma_priority": ["basti", "krikatika"]
+    },
+    "vata_pitta": {
+      "doshas": {"vata": 0.45, "pitta": 0.45, "kapha": 0.1},
+      "therapeutic_focus": "stress resilience, metabolic-neural balance",
+      "gene_priority_boost": ["BDNF", "PPARG", "CRH", "NR3C1"],
+      "marma_priority": ["hridaya", "nabhi", "gulpha"]
+    },
+    "pitta_kapha": {
+      "doshas": {"vata": 0.1, "pitta": 0.45, "kapha": 0.45},
+      "therapeutic_focus": "metabolic-structural balance, immunity",
+      "gene_priority_boost": ["TNF", "TGFB1", "IGF1", "CYP3A4"],
+      "marma_priority": ["nabhi", "basti", "krikatika"]
+    },
+    "tridoshic": {
+      "doshas": {"vata": 0.33, "pitta": 0.33, "kapha": 0.34},
+      "therapeutic_focus": "full systemic harmony",
+      "gene_priority_boost": [],
+      "marma_priority": ["hridaya", "nabhi", "sthapani"]
+    }
+  },
+  "pam_sequence_ethics": {
+    "NGG": {"efficiency_factor": 1.0, "spCas9_compatible": true},
+    "NNGRRT": {"efficiency_factor": 0.85, "spCas9_compatible": false, "notes": "SaCas9"},
+    "NGTN": {"efficiency_factor": 0.75, "spCas9_compatible": false, "notes": "CpfI/Cas12a"}
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2025-01-01",
+    "sources": [
+      "Mapping Ayurveda to Modern Genetics — NCBI 2021",
+      "Marma Points: Neurophysiological Correlates — JIM 2019",
+      "Prakriti-based Genomics and Personalized Medicine — Frontiers in Bioscience 2020"
+    ],
+    "author": "Rutuja — CRISPR Intelligence & Bioinformatics"
+  }
+}

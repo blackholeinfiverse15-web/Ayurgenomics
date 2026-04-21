@@ -1,0 +1,3 @@
+[console_scripts]
+crispr-rl-serve = crispr_rl.api:app
+crispr-rl-visualize = scripts.visualize_scores:main

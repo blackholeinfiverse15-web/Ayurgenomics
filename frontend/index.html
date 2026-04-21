@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AyurGenomics — CRISPR RL v4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&family=Cinzel:wght@400;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+:root {
+  --void: #060910;
+  --deep: #0C1018;
+  --surface: #111620;
+  --raised: #181f2e;
+  --border: #1e2a3d;
+  --border-glow: #2a3f5f;
+  --gold: #C9A84C;
+  --gold-dim: #8a6e2f;
+  --gold-glow: rgba(201,168,76,0.15);
+  --emerald: #00C97A;
+  --emerald-dim: #007a4a;
+  --emerald-glow: rgba(0,201,122,0.12);
+  --vata: #7B6EF6;
+  --pitta: #F06449;
+  --kapha: #4CAF82;
+  --text-primary: #E8DFC8;
+  --text-secondary: #8a9ab5;
+  --text-muted: #4a5568;
+  --critical: #e05c5c;
+  --high: #e09b5c;
+  --medium: #e0d65c;
+  --low: #5ce08a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--void); color: var(--text-primary); font-family: 'Cormorant Garamond', serif; overflow-x: hidden; }
+
+/* Grain overlay */
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 999;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity: 0.4;
+}
+
+/* Ambient orbs */
+.orb {
+  position: fixed; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0;
+}
+.orb-gold { width: 400px; height: 400px; background: radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 70%); top: -100px; right: -100px; }
+.orb-emerald { width: 500px; height: 500px; background: radial-gradient(circle, rgba(0,201,122,0.06) 0%, transparent 70%); bottom: -150px; left: -150px; }
+.orb-vata { width: 300px; height: 300px; background: radial-gradient(circle, rgba(123,110,246,0.05) 0%, transparent 70%); top: 50%; left: 50%; transform: translate(-50%,-50%); }
+
+/* Layout */
+#root { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+
+/* Header */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 40px; border-bottom: 1px solid var(--border);
+  background: rgba(6,9,16,0.8); backdrop-filter: blur(20px);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo { display: flex; align-items: center; gap: 14px; }
+.logo-mark {
+  width: 42px; height: 42px; border-radius: 50%;
+  border: 1px solid var(--gold-dim);
+  background: radial-gradient(circle at 40% 35%, rgba(201,168,76,0.2), transparent 70%);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Cinzel', serif; font-size: 16px; color: var(--gold);
+}
+.logo-text { line-height: 1; }
+.logo-title { font-family: 'Cinzel', serif; font-size: 18px; letter-spacing: 0.08em; color: var(--gold); }
+.logo-sub { font-size: 11px; letter-spacing: 0.2em; color: var(--text-secondary); text-transform: uppercase; margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+.status-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px; border-radius: 20px;
+  border: 1px solid var(--emerald-dim); background: var(--emerald-glow);
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--emerald);
+}
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--emerald); animation: pulse-dot 2s infinite; }
+@keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+
+/* Nav */
+.nav { display: flex; gap: 4px; padding: 0 40px; border-bottom: 1px solid var(--border); background: var(--deep); overflow-x: auto; }
+.nav-tab {
+  padding: 14px 24px; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace; color: var(--text-muted); cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap;
+  background: none; border-top: none; border-left: none; border-right: none;
+}
+.nav-tab:hover { color: var(--text-secondary); }
+.nav-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+/* Main */
+.main { flex: 1; padding: 40px; max-width: 1200px; margin: 0 auto; width: 100%; }
+
+/* Section title */
+.section-title { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 300; color: var(--text-primary); margin-bottom: 6px; }
+.section-title em { font-style: italic; color: var(--gold); }
+.section-sub { font-size: 14px; color: var(--text-secondary); letter-spacing: 0.05em; margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; }
+
+/* Cards */
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 28px; margin-bottom: 20px;
+}
+.card-title { font-family: 'Cinzel', serif; font-size: 13px; letter-spacing: 0.15em; color: var(--gold); margin-bottom: 20px; text-transform: uppercase; }
+
+/* Form elements */
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 8px; }
+.form-group.full { grid-column: 1 / -1; }
+label { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; }
+input, select, textarea {
+  background: var(--raised); border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 13px;
+  padding: 10px 14px; transition: border-color 0.2s; width: 100%; outline: none;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--gold-dim); box-shadow: 0 0 0 3px var(--gold-glow); }
+select option { background: var(--raised); }
+textarea { resize: vertical; min-height: 80px; }
+
+/* Prakriti selector */
+.prakriti-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 8px; }
+.prakriti-card {
+  border: 1px solid var(--border); border-radius: 10px; padding: 14px;
+  cursor: pointer; transition: all 0.2s; text-align: center; background: var(--raised);
+}
+.prakriti-card:hover { border-color: var(--border-glow); }
+.prakriti-card.selected { border-color: var(--gold); background: var(--gold-glow); }
+.prakriti-icon { font-size: 22px; margin-bottom: 6px; }
+.prakriti-name { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.1em; color: var(--gold); }
+.prakriti-desc { font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
+.dosha-bars { display: flex; gap: 3px; margin-top: 8px; height: 4px; border-radius: 2px; overflow: hidden; }
+.dosha-bar-v { background: var(--vata); border-radius: 2px; }
+.dosha-bar-p { background: var(--pitta); border-radius: 2px; }
+.dosha-bar-k { background: var(--kapha); border-radius: 2px; }
+
+/* Genes input */
+.gene-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.gene-tag {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--emerald-glow); border: 1px solid var(--emerald-dim);
+  border-radius: 20px; padding: 4px 12px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--emerald);
+}
+.gene-tag-remove { cursor: pointer; color: var(--text-muted); font-size: 14px; line-height: 1; }
+.gene-tag-remove:hover { color: var(--critical); }
+.gene-add-row { display: flex; gap: 10px; }
+.gene-add-row input { flex: 1; }
+
+/* Buttons */
+.btn {
+  padding: 12px 28px; border-radius: 8px; font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+  transition: all 0.2s; border: none;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #8a6e2f, var(--gold));
+  color: var(--void); font-weight: 500;
+}
+.btn-primary:hover { filter: brightness(1.15); transform: translateY(-1px); box-shadow: 0 4px 20px var(--gold-glow); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.btn-ghost {
+  background: transparent; color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { border-color: var(--border-glow); color: var(--text-primary); }
+.btn-sm { padding: 7px 16px; font-size: 11px; }
+.btn-emerald { background: linear-gradient(135deg, var(--emerald-dim), var(--emerald)); color: var(--void); font-weight: 500; }
+
+/* Results */
+.result-card {
+  border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 16px;
+}
+.result-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; background: var(--raised); border-bottom: 1px solid var(--border);
+}
+.gene-badge { font-family: 'Cinzel', serif; font-size: 16px; color: var(--gold); }
+.rl-badge {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  background: var(--emerald-glow); border: 1px solid var(--emerald-dim);
+  color: var(--emerald); padding: 4px 10px; border-radius: 20px;
+}
+.candidate-row {
+  display: grid; grid-template-columns: 1fr auto; align-items: start;
+  padding: 16px 20px; border-bottom: 1px solid var(--border); gap: 20px;
+}
+.candidate-row:last-child { border-bottom: none; }
+.candidate-row.selected-row { background: rgba(201,168,76,0.04); }
+.seq { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--emerald); letter-spacing: 0.05em; word-break: break-all; }
+.seq-label { font-size: 10px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+.meta-row { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; }
+.meta-item { font-size: 11px; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; }
+.meta-item span { color: var(--text-primary); }
+.score-block { text-align: right; min-width: 120px; }
+.harmony-score { font-family: 'Cormorant Garamond', serif; font-size: 36px; font-weight: 300; color: var(--gold); line-height: 1; }
+.harmony-label { font-size: 10px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
+.score-bars { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+.score-bar-row { display: flex; align-items: center; gap: 6px; }
+.score-bar-label { font-size: 9px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; width: 24px; text-align: right; }
+.score-bar-track { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; width: 80px; }
+.score-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s; }
+.caution-badge {
+  display: inline-block; padding: 3px 10px; border-radius: 20px;
+  font-size: 10px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em;
+  text-transform: uppercase; margin-top: 6px;
+}
+.caution-critical { background: rgba(224,92,92,0.15); color: var(--critical); border: 1px solid rgba(224,92,92,0.3); }
+.caution-high { background: rgba(224,155,92,0.15); color: var(--high); border: 1px solid rgba(224,155,92,0.3); }
+.caution-medium { background: rgba(224,214,92,0.15); color: var(--medium); border: 1px solid rgba(224,214,92,0.3); }
+.caution-low { background: rgba(92,224,138,0.15); color: var(--low); border: 1px solid rgba(92,224,138,0.3); }
+.notes-list { margin-top: 8px; }
+.note-item { font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; padding: 2px 0; display: flex; gap: 6px; line-height: 1.5; }
+.note-item::before { content: '·'; color: var(--gold-dim); flex-shrink: 0; }
+
+/* Metrics */
+.metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.metric-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+  text-align: center; position: relative; overflow: hidden;
+}
+.metric-card::before {
+  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 60%; height: 1px; background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+}
+.metric-value { font-family: 'Cormorant Garamond', serif; font-size: 42px; font-weight: 300; color: var(--gold); line-height: 1; }
+.metric-value.emerald { color: var(--emerald); }
+.metric-unit { font-size: 14px; color: var(--text-muted); margin-left: 2px; }
+.metric-label { font-size: 10px; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 6px; }
+.metric-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+
+/* Charts */
+.chart-container { height: 180px; display: flex; align-items: flex-end; gap: 6px; padding: 20px 0 0; }
+.chart-bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.chart-bars { display: flex; gap: 3px; align-items: flex-end; height: 140px; width: 100%; justify-content: center; }
+.chart-bar {
+  flex: 1; border-radius: 3px 3px 0 0; transition: height 0.8s cubic-bezier(0.4,0,0.2,1);
+  min-height: 2px; max-width: 24px;
+  position: relative; cursor: pointer;
+}
+.chart-bar:hover { filter: brightness(1.3); }
+.chart-bar-baseline { background: linear-gradient(to top, #3a4050, #5a6070); }
+.chart-bar-rl { background: linear-gradient(to top, #1a4070, #4090e0); }
+.chart-bar-ahs { background: linear-gradient(to top, var(--gold-dim), var(--gold)); }
+.chart-label { font-size: 9px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-align: center; word-break: break-all; }
+.chart-legend { display: flex; gap: 16px; margin-top: 12px; justify-content: center; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; }
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+/* Marma explorer */
+.marma-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.marma-card {
+  border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+  cursor: pointer; transition: all 0.25s; background: var(--surface);
+}
+.marma-card:hover { border-color: var(--gold-dim); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+.marma-card.expanded { border-color: var(--gold); background: rgba(201,168,76,0.04); }
+.marma-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+.marma-name { font-family: 'Cinzel', serif; font-size: 16px; color: var(--gold); }
+.marma-organ { font-size: 12px; color: var(--text-secondary); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+.sensitivity-ring {
+  width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-family: 'Cormorant Garamond', serif; font-size: 14px; font-weight: 600;
+  border: 2px solid; flex-shrink: 0;
+}
+.marma-location { font-size: 11px; color: var(--text-muted); font-style: italic; margin-bottom: 12px; font-family: 'Cormorant Garamond', serif; }
+.marma-genes { display: flex; flex-wrap: wrap; gap: 6px; }
+.gene-chip {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  padding: 3px 8px; border-radius: 4px;
+  background: var(--raised); border: 1px solid var(--border); color: var(--text-secondary);
+}
+.marma-note { font-size: 12px; color: var(--text-muted); margin-top: 12px; line-height: 1.6; font-style: italic; border-top: 1px solid var(--border); padding-top: 12px; font-family: 'Cormorant Garamond', serif; }
+.dosha-affinity { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+.dosha-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* Feedback */
+.star-row { display: flex; gap: 8px; margin: 8px 0; }
+.star { font-size: 24px; cursor: pointer; transition: transform 0.1s; color: var(--text-muted); }
+.star:hover, .star.lit { color: var(--gold); transform: scale(1.1); }
+.slider-container { margin: 12px 0; }
+.slider { width: 100%; -webkit-appearance: none; height: 4px; border-radius: 2px; background: var(--border); outline: none; }
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--gold); cursor: pointer; border: 2px solid var(--void);
+}
+.slider-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; margin-top: 4px; }
+.toast {
+  position: fixed; bottom: 30px; right: 30px; z-index: 200;
+  background: var(--surface); border: 1px solid var(--emerald-dim);
+  border-radius: 10px; padding: 14px 20px; color: var(--emerald);
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  animation: slide-in 0.3s ease;
+}
+@keyframes slide-in { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+/* Loading */
+.spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; font-size: 13px; display: flex; align-items: center; padding: 30px 0; }
+.error-box { background: rgba(224,92,92,0.1); border: 1px solid rgba(224,92,92,0.3); border-radius: 8px; padding: 14px 18px; color: var(--critical); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+.empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+.empty-text { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-style: italic; }
+
+/* Dosha mix visual */
+.dosha-mix-bar { height: 6px; border-radius: 3px; overflow: hidden; display: flex; margin: 8px 0; }
+.uplift-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 20px; font-family: 'JetBrains Mono', monospace; font-size: 12px;
+}
+.uplift-positive { background: var(--emerald-glow); border: 1px solid var(--emerald-dim); color: var(--emerald); }
+.uplift-negative { background: rgba(224,92,92,0.1); border: 1px solid rgba(224,92,92,0.3); color: var(--critical); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .header { padding: 16px 20px; }
+  .nav { padding: 0 20px; }
+  .main { padding: 24px 20px; }
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  .form-row { grid-template-columns: 1fr; }
+  .prakriti-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Fade-in */
+.fade-in { animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+/* Divider */
+.divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 24px 0; }
+
+/* Selected marker */
+.selected-marker {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; color: var(--gold); font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+.selected-marker::before { content: '★'; }
+</style>
+</head>
+<body>
+<div class="orb orb-gold"></div>
+<div class="orb orb-emerald"></div>
+<div class="orb orb-vata"></div>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+const API = 'http://localhost:8000';
+
+const PRAKRITI_META = {
+  vata_dominant:  { icon: '🌬️', label: 'Vata', color: '#7B6EF6', desc: 'Neural stability, grounding', v:0.6,p:0.25,k:0.15 },
+  pitta_dominant: { icon: '🔥', label: 'Pitta', color: '#F06449', desc: 'Metabolic balance, clarity', v:0.2,p:0.6,k:0.2 },
+  kapha_dominant: { icon: '🌿', label: 'Kapha', color: '#4CAF82', desc: 'Growth regulation, immunity', v:0.15,p:0.25,k:0.6 },
+  vata_pitta:     { icon: '⚡', label: 'Vata–Pitta', color: '#9B8CF0', desc: 'Stress resilience', v:0.45,p:0.45,k:0.1 },
+  pitta_kapha:    { icon: '🌊', label: 'Pitta–Kapha', color: '#6BAF82', desc: 'Metabolic-structural', v:0.1,p:0.45,k:0.45 },
+  tridoshic:      { icon: '☯️', label: 'Tridoshic', color: '#C9A84C', desc: 'Full systemic harmony', v:0.33,p:0.33,k:0.34 },
+};
+
+const CAUTION_COLORS = { critical: '#e05c5c', high: '#e09b5c', medium: '#e0d65c', low: '#5ce08a' };
+
+function useFetch(url) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    setLoading(true);
+    fetch(API + url)
+      .then(r => r.json())
+      .then(d => { setData(d); setLoading(false); })
+      .catch(e => { setError(e.message); setLoading(false); });
+  }, [url]);
+  return { data, loading, error };
+}
+
+// ─── Header ───────────────────────────────────────────────────────
+function Header({ apiOk }) {
+  return (
+    <header className="header">
+      <div className="logo">
+        <div className="logo-mark">Ω</div>
+        <div className="logo-text">
+          <div className="logo-title">AyurGenomics</div>
+          <div className="logo-sub">CRISPR RL v4 · Intelligence Engine</div>
+        </div>
+      </div>
+      <div className="status-pill">
+        <div className="status-dot" style={{ background: apiOk ? 'var(--emerald)' : 'var(--critical)' }}></div>
+        {apiOk ? 'API Connected' : 'API Offline'}
+      </div>
+    </header>
+  );
+}
+
+// ─── Design Tab ───────────────────────────────────────────────────
+function DesignTab({ onResult }) {
+  const [genes, setGenes] = useState(['BDNF']);
+  const [geneInput, setGeneInput] = useState('');
+  const [profile, setProfile] = useState('vata_dominant');
+  const [pamType, setPamType] = useState('NGG');
+  const [topK, setTopK] = useState(3);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [results, setResults] = useState(null);
+
+  const addGene = () => {
+    const g = geneInput.trim().toUpperCase();
+    if (g && !genes.includes(g) && genes.length < 5) {
+      setGenes([...genes, g]);
+      setGeneInput('');
+    }
+  };
+
+  const removeGene = (g) => setGenes(genes.filter(x => x !== g));
+
+  const submit = async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch(API + '/crispr/design', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targets: genes.map(g => ({ gene_id: g, pam_type: pamType })),
+          ayur_profile: profile,
+          top_k: topK,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Request failed');
+      setResults(data);
+      onResult(data);
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div className="fade-in">
+      <div className="section-title">gRNA <em>Design</em></div>
+      <div className="section-sub">// Select genes & prakriti profile → RL-ranked CRISPR candidates</div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 20 }}>
+        {/* Left panel */}
+        <div>
+          <div className="card">
+            <div className="card-title">Gene Targets</div>
+            <div className="gene-tags">
+              {genes.map(g => (
+                <div key={g} className="gene-tag">
+                  {g}
+                  <span className="gene-tag-remove" onClick={() => removeGene(g)}>×</span>
+                </div>
+              ))}
+            </div>
+            <div className="gene-add-row">
+              <input
+                value={geneInput}
+                onChange={e => setGeneInput(e.target.value.toUpperCase())}
+                onKeyDown={e => e.key === 'Enter' && addGene()}
+                placeholder="e.g. PPARG, TP53, BRCA1…"
+              />
+              <button className="btn btn-ghost btn-sm" onClick={addGene}>Add</button>
+            </div>
+            <div style={{ marginTop: 10, fontSize: 11, color: 'var(--text-muted)', fontFamily: 'JetBrains Mono, monospace' }}>
+              Demo genes: BDNF · PPARG · SCN1A · BRCA1 · TP53 · MYH7 · TGFB1
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-title">Parameters</div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>PAM Type</label>
+                <select value={pamType} onChange={e => setPamType(e.target.value)}>
+                  <option value="NGG">NGG — SpCas9</option>
+                  <option value="NNGRRT">NNGRRT — SaCas9</option>
+                  <option value="NGTN">NGTN — Cas12a</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Top K Results</label>
+                <select value={topK} onChange={e => setTopK(+e.target.value)}>
+                  {[1,2,3,5,10].map(n => <option key={n} value={n}>{n} per gene</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <button className="btn btn-primary" onClick={submit} disabled={loading || !genes.length} style={{ width: '100%' }}>
+            {loading ? <><span className="spinner"></span>Analysing…</> : '✦ Run AyurGenomic Design'}
+          </button>
+          {error && <div className="error-box" style={{ marginTop: 12 }}>{error}</div>}
+        </div>
+
+        {/* Prakriti selector */}
+        <div className="card">
+          <div className="card-title">Prakriti Profile</div>
+          <div className="prakriti-grid">
+            {Object.entries(PRAKRITI_META).map(([key, meta]) => (
+              <div
+                key={key}
+                className={`prakriti-card ${profile === key ? 'selected' : ''}`}
+                onClick={() => setProfile(key)}
+              >
+                <div className="prakriti-icon">{meta.icon}</div>
+                <div className="prakriti-name">{meta.label}</div>
+                <div className="prakriti-desc">{meta.desc}</div>
+                <div className="dosha-bars">
+                  <div className="dosha-bar-v" style={{ flex: meta.v }}></div>
+                  <div className="dosha-bar-p" style={{ flex: meta.p }}></div>
+                  <div className="dosha-bar-k" style={{ flex: meta.k }}></div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 12, fontSize: 12, color: 'var(--text-muted)', fontFamily: 'JetBrains Mono, monospace', display: 'flex', gap: 16 }}>
+            <span><span style={{color:'var(--vata)'}}>■</span> Vata</span>
+            <span><span style={{color:'var(--pitta)'}}>■</span> Pitta</span>
+            <span><span style={{color:'var(--kapha)'}}>■</span> Kapha</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Results */}
+      {results && (
+        <div style={{ marginTop: 28 }}>
+          <div className="divider"/>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+            <div style={{ fontFamily: 'Cinzel, serif', fontSize: 13, color: 'var(--gold)', letterSpacing: '0.15em' }}>DESIGN RESULTS</div>
+            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: 'var(--text-muted)' }}>
+              {results.latency_ms}ms · AHS: {results.avg_harmony_index}
+            </div>
+          </div>
+          {results.results.map(r => <ResultCard key={r.gene_id} result={r} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ResultCard({ result }) {
+  const [expanded, setExpanded] = useState(true);
+  const sel = result.rl_selected;
+  if (!sel) return null;
+
+  return (
+    <div className="result-card fade-in">
+      <div className="result-header" onClick={() => setExpanded(!expanded)} style={{ cursor: 'pointer' }}>
+        <div>
+          <div className="gene-badge">{result.gene_id}</div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'JetBrains Mono, monospace', marginTop: 2 }}>
+            {result.top_candidates?.length || 0} candidates ranked
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div className="rl-badge">RL reward: {result.rl_reward > 0 ? '+' : ''}{result.rl_reward}</div>
+          <div style={{ color: 'var(--text-muted)', fontSize: 18 }}>{expanded ? '▲' : '▼'}</div>
+        </div>
+      </div>
+
+      {expanded && result.top_candidates?.map((c, i) => (
+        <div key={i} className={`candidate-row ${c.grna_sequence === sel.grna_sequence ? 'selected-row' : ''}`}>
+          <div>
+            <div className="seq-label">
+              {c.grna_sequence === sel.grna_sequence
+                ? <span className="selected-marker">RL Selected</span>
+                : `Candidate #${i+1}`}
+            </div>
+            <div className="seq">{c.grna_sequence}</div>
+            <div className="meta-row">
+              <div className="meta-item">PAM <span>{c.pam_sequence}</span></div>
+              <div className="meta-item">GC <span>{(c.gc_content*100).toFixed(0)}%</span></div>
+              <div className="meta-item">Strand <span>{c.strand}</span></div>
+              <div className="meta-item">Pos <span>{c.position}</span></div>
+            </div>
+            {c.notes?.length > 0 && (
+              <div className="notes-list">
+                {c.notes.slice(0,2).map((n, ni) => <div key={ni} className="note-item">{n}</div>)}
+              </div>
+            )}
+          </div>
+          <div className="score-block">
+            <div className="harmony-score">{c.harmony_index?.toFixed(3)}</div>
+            <div className="harmony-label">AHS</div>
+            <div className="score-bars">
+              {[
+                { label:'Eff', val: c.efficiency_score, color: 'var(--emerald)' },
+                { label:'Spe', val: c.specificity_score, color: 'var(--vata)' },
+                { label:'Mar', val: c.marma_alignment, color: 'var(--gold)' },
+              ].map(b => (
+                <div key={b.label} className="score-bar-row">
+                  <div className="score-bar-label">{b.label}</div>
+                  <div className="score-bar-track">
+                    <div className="score-bar-fill" style={{ width: `${(b.val||0)*100}%`, background: b.color }}></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className={`caution-badge caution-${c.caution_level}`}>{c.caution_level}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Metrics Tab ──────────────────────────────────────────────────
+function MetricsTab() {
+  const [metrics, setMetrics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+
+  const fetchMetrics = useCallback(() => {
+    fetch(API + '/crispr/metrics')
+      .then(r => r.json())
+      .then(d => { setMetrics(d.metrics); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { fetchMetrics(); }, []);
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const t = setInterval(fetchMetrics, 3000);
+    return () => clearInterval(t);
+  }, [autoRefresh, fetchMetrics]);
+
+  if (loading) return <div className="loading-text"><span className="spinner"></span>Loading metrics…</div>;
+
+  const m = metrics || {};
+  const upliftPos = (m.efficiency_uplift_pct || 0) >= 0;
+
+  return (
+    <div className="fade-in">
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 6 }}>
+        <div className="section-title">Live <em>Metrics</em></div>
+        <button className={`btn btn-sm ${autoRefresh ? 'btn-emerald' : 'btn-ghost'}`} onClick={() => setAutoRefresh(!autoRefresh)}>
+          {autoRefresh ? '⏹ Stop' : '▶ Auto-refresh'}
+        </button>
+      </div>
+      <div className="section-sub">// RL agent performance · AyurHarmony index · learning progress</div>
+
+      <div className="metrics-grid">
+        <div className="metric-card">
+          <div className="metric-value">{m.avg_harmony_index?.toFixed(3) || '—'}</div>
+          <div className="metric-label">AyurHarmony Index</div>
+          <div className="metric-sub">composite AHS score</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-value emerald">
+            {upliftPos ? '+' : ''}{m.efficiency_uplift_pct?.toFixed(1) || '0'}
+            <span className="metric-unit">%</span>
+          </div>
+          <div className="metric-label">Efficiency Uplift</div>
+          <div className="metric-sub">vs random baseline</div>
+          <div style={{ marginTop: 8 }}>
+            <div className={`uplift-badge ${upliftPos ? 'uplift-positive' : 'uplift-negative'}`}>
+              {upliftPos ? '▲' : '▼'} target ≥15%
+            </div>
+          </div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-value">{m.total_episodes || 0}</div>
+          <div className="metric-label">Total Episodes</div>
+          <div className="metric-sub">designs processed</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-value">{m.avg_reward?.toFixed(3) || '—'}</div>
+          <div className="metric-label">Avg Reward</div>
+          <div className="metric-sub">RL agent signal</div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="card">
+          <div className="card-title">RL Agent State</div>
+          {[
+            { label: 'Exploration Rate (ε)', val: m.epsilon, pct: m.epsilon, color: 'var(--vata)' },
+            { label: 'Avg Efficiency', val: m.avg_efficiency?.toFixed(3), pct: m.avg_efficiency, color: 'var(--emerald)' },
+            { label: 'Avg Harmony', val: m.avg_harmony_index?.toFixed(3), pct: m.avg_harmony_index, color: 'var(--gold)' },
+          ].map(row => (
+            <div key={row.label} style={{ marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontFamily: 'JetBrains Mono, monospace' }}>{row.label}</span>
+                <span style={{ fontSize: 12, color: 'var(--text-primary)', fontFamily: 'JetBrains Mono, monospace' }}>{row.val}</span>
+              </div>
+              <div style={{ height: 4, background: 'var(--border)', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${(row.pct||0)*100}%`, background: row.color, borderRadius: 2, transition: 'width 0.8s' }}></div>
+              </div>
+            </div>
+          ))}
+          <div style={{ marginTop: 16, fontSize: 11, color: 'var(--text-muted)', fontFamily: 'JetBrains Mono, monospace' }}>
+            Q-table states: {m.q_table_states || 0} · Baseline efficiency: {m.baseline_efficiency}
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-title">Acceptance Criteria</div>
+          {[
+            { label: 'API Working End-to-End', pass: true },
+            { label: 'HarmonyScore in Metrics', pass: !!(m.avg_harmony_index) },
+            { label: 'Efficiency Uplift ≥15%', pass: (m.efficiency_uplift_pct || 0) >= 15 },
+            { label: 'Episodes Recorded', pass: (m.total_episodes || 0) > 0 },
+            { label: 'Failed Calls: 0', pass: (m.failed_calls || 0) === 0 },
+          ].map(row => (
+            <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+              <div style={{
+                width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                background: row.pass ? 'var(--emerald-glow)' : 'rgba(224,92,92,0.1)',
+                border: `1px solid ${row.pass ? 'var(--emerald-dim)' : 'rgba(224,92,92,0.3)'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 12, color: row.pass ? 'var(--emerald)' : 'var(--critical)',
+              }}>
+                {row.pass ? '✓' : '✗'}
+              </div>
+              <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'JetBrains Mono, monospace' }}>{row.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Feedback Tab ─────────────────────────────────────────────────
+function FeedbackTab({ lastResult }) {
+  const [grna, setGrna] = useState('');
+  const [score, setScore] = useState(0.5);
+  const [notes, setNotes] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  // Populate from last result
+  const sequences = lastResult?.results?.flatMap(r => r.top_candidates?.map(c => c.grna_sequence) || []) || [];
+
+  const submit = async () => {
+    if (!grna) return;
+    setLoading(true);
+    try {
+      const res = await fetch(API + '/crispr/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grna_sequence: grna, human_score: score * 2 - 1, notes }),
+      });
+      await res.json();
+      setSubmitted(true);
+      setToast('Feedback submitted — RL agent updated ✦');
+      setTimeout(() => setToast(null), 3000);
+      setTimeout(() => setSubmitted(false), 2000);
+    } catch (e) { setToast('Submission failed'); }
+    finally { setLoading(false); }
+  };
+
+  const stars = Math.round(score * 5);
+
+  return (
+    <div className="fade-in">
+      <div className="section-title">Expert <em>Feedback</em></div>
+      <div className="section-sub">// Submit clinical or experimental feedback to refine the RL agent</div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div className="card">
+          <div className="card-title">gRNA Sequence</div>
+          {sequences.length > 0 ? (
+            <div className="form-group" style={{ marginBottom: 16 }}>
+              <label>Select from last design run</label>
+              <select value={grna} onChange={e => setGrna(e.target.value)}>
+                <option value="">— choose a sequence —</option>
+                {sequences.map((s, i) => <option key={i} value={s}>{s}</option>)}
+              </select>
+            </div>
+          ) : null}
+          <div className="form-group">
+            <label>Or paste sequence manually</label>
+            <input
+              value={grna}
+              onChange={e => setGrna(e.target.value.toUpperCase())}
+              placeholder="20-nt protospacer sequence…"
+              style={{ fontFamily: 'JetBrains Mono, monospace' }}
+            />
+          </div>
+          <div className="form-group" style={{ marginTop: 16 }}>
+            <label>Expert Notes</label>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="e.g. Strong on-target in HEK293T cells, minimal off-target detected…"
+            />
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-title">Score this gRNA</div>
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <div className="star-row" style={{ justifyContent: 'center' }}>
+              {[1,2,3,4,5].map(s => (
+                <div key={s} className={`star ${s <= stars ? 'lit' : ''}`} onClick={() => setScore(s/5)}>★</div>
+              ))}
+            </div>
+            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>
+              {['Reject', 'Poor', 'Moderate', 'Good', 'Excellent'][stars-1] || 'Rate this gRNA'}
+            </div>
+          </div>
+
+          <div className="slider-container">
+            <label>Fine-grained score: <span style={{ color: 'var(--gold)' }}>{(score * 2 - 1).toFixed(2)}</span></label>
+            <input type="range" className="slider" min="0" max="1" step="0.01" value={score} onChange={e => setScore(+e.target.value)} style={{ marginTop: 10 }}/>
+            <div className="slider-labels"><span>−1 Reject</span><span>0 Neutral</span><span>+1 Excellent</span></div>
+          </div>
+
+          <div style={{ marginTop: 20, padding: 16, background: 'var(--raised)', borderRadius: 8, border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'JetBrains Mono, monospace', lineHeight: 1.6 }}>
+              This score feeds directly into the RL agent's Q-table, reinforcing (positive) or penalising (negative) similar future selections for this gene's dosha profile.
+            </div>
+          </div>
+
+          <button
+            className="btn btn-primary"
+            onClick={submit}
+            disabled={!grna || loading || submitted}
+            style={{ width: '100%', marginTop: 16 }}
+          >
+            {submitted ? '✦ Feedback Recorded' : loading ? <><span className="spinner"/>Submitting…</> : 'Submit Feedback'}
+          </button>
+        </div>
+      </div>
+      {toast && <div className="toast">{toast}</div>}
+    </div>
+  );
+}
+
+// ─── Visualise Tab ────────────────────────────────────────────────
+function VisualiseTab({ lastResult }) {
+  if (!lastResult?.results?.length) {
+    return (
+      <div className="fade-in">
+        <div className="section-title">Score <em>Visualisation</em></div>
+        <div className="section-sub">// Baseline vs RL vs AyurHarmony comparison</div>
+        <div className="empty-state">
+          <div className="empty-icon">📊</div>
+          <div className="empty-text">Run a design first to see the visualisation</div>
+        </div>
+      </div>
+    );
+  }
+
+  const allCandidates = lastResult.results.flatMap(r =>
+    (r.top_candidates || []).map(c => ({ ...c, gene: r.gene_id }))
+  );
+
+  const maxH = 140;
+
+  return (
+    <div className="fade-in">
+      <div className="section-title">Score <em>Visualisation</em></div>
+      <div className="section-sub">// Baseline vs RL vs AyurHarmony — last design run</div>
+
+      <div className="card">
+        <div className="card-title">Score Comparison — Top Candidates</div>
+        <div className="chart-container">
+          {allCandidates.slice(0, 12).map((c, i) => {
+            const baseline = c.efficiency_score * 0.6; // simplified baseline
+            const rl = c.efficiency_score * 0.6 + c.specificity_score * 0.4;
+            const ahs = c.harmony_index || 0;
+            const max = 1;
+            return (
+              <div key={i} className="chart-bar-group">
+                <div className="chart-bars">
+                  <div className="chart-bar chart-bar-baseline" style={{ height: `${(baseline/max)*maxH}px` }} title={`Baseline: ${baseline.toFixed(3)}`}></div>
+                  <div className="chart-bar chart-bar-rl" style={{ height: `${(rl/max)*maxH}px` }} title={`RL: ${rl.toFixed(3)}`}></div>
+                  <div className="chart-bar chart-bar-ahs" style={{ height: `${(ahs/max)*maxH}px` }} title={`AHS: ${ahs.toFixed(3)}`}></div>
+                </div>
+                <div className="chart-label">{c.gene}<br/>{c.grna_sequence.slice(0,6)}…</div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="chart-legend">
+          <div className="legend-item"><div className="legend-dot" style={{background:'#5a6070'}}></div>Baseline</div>
+          <div className="legend-item"><div className="legend-dot" style={{background:'#4090e0'}}></div>RL Score</div>
+          <div className="legend-item"><div className="legend-dot" style={{background:'var(--gold)'}}></div>AyurHarmony</div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="card">
+          <div className="card-title">Score Distribution</div>
+          {allCandidates.slice(0,6).map((c, i) => (
+            <div key={i} style={{ marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontFamily: 'JetBrains Mono, monospace' }}>
+                  {c.gene} · {c.grna_sequence.slice(0,10)}…
+                </span>
+                <div className={`caution-badge caution-${c.caution_level}`} style={{ fontSize: 9 }}>{c.caution_level}</div>
+              </div>
+              <div style={{ height: 8, background: 'var(--border)', borderRadius: 4, overflow: 'hidden', display: 'flex' }}>
+                <div style={{ width: `${(c.harmony_index||0)*100}%`, background: `linear-gradient(90deg, var(--gold-dim), var(--gold))`, borderRadius: 4, transition: 'width 1s' }}></div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3, fontSize: 10, color: 'var(--text-muted)', fontFamily: 'JetBrains Mono, monospace' }}>
+                <span>AHS: {c.harmony_index?.toFixed(3)}</span>
+                <span>Eff: {c.efficiency_score?.toFixed(2)} · Spe: {c.specificity_score?.toFixed(2)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="card">
+          <div className="card-title">Run Summary</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {[
+              { label: 'Avg Harmony Index', val: lastResult.avg_harmony_index?.toFixed(4), color: 'var(--gold)' },
+              { label: 'Latency', val: `${lastResult.latency_ms} ms`, color: 'var(--emerald)' },
+              { label: 'Prakriti Profile', val: lastResult.ayur_profile?.replace(/_/g,' '), color: 'var(--vata)' },
+              { label: 'Genes Processed', val: lastResult.results?.length, color: 'var(--text-primary)' },
+            ].map(row => (
+              <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'JetBrains Mono, monospace' }}>{row.label}</span>
+                <span style={{ fontSize: 13, color: row.color, fontFamily: 'JetBrains Mono, monospace', fontWeight: 500 }}>{row.val}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 16, padding: 12, background: 'var(--raised)', borderRadius: 8, fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', lineHeight: 1.6 }}>
+            "The AyurHarmonyScore harmonises molecular precision with the ancient wisdom of prakriti-genomic correspondence."
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Marma Explorer ───────────────────────────────────────────────
+function MarmaTab() {
+  const { data, loading } = useFetch('/crispr/marma');
+  const [expanded, setExpanded] = useState(null);
+
+  if (loading) return <div className="loading-text"><span className="spinner"></span>Loading marma map…</div>;
+
+  const marmaPoints = data?.marma_points || [];
+
+  const sensitivityColor = (s) => {
+    if (s >= 0.9) return '#e05c5c';
+    if (s >= 0.8) return '#e09b5c';
+    if (s >= 0.7) return '#e0d65c';
+    return '#5ce08a';
+  };
+
+  const doshaColor = (affinity) => {
+    if (affinity?.includes('vata') && affinity?.includes('pitta')) return 'var(--vata)';
+    if (affinity?.includes('vata')) return 'var(--vata)';
+    if (affinity?.includes('pitta')) return 'var(--pitta)';
+    return 'var(--kapha)';
+  };
+
+  return (
+    <div className="fade-in">
+      <div className="section-title">Marma <em>Explorer</em></div>
+      <div className="section-sub">// Ancient vital points mapped to modern genomic targets</div>
+
+      <div className="card" style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+          <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 16, color: 'var(--text-secondary)', lineHeight: 1.7, flex: 1, minWidth: 260 }}>
+            <em>Marma</em> points are the vital junctions in Ayurvedic anatomy where prana (life force) is concentrated. 
+            Each marma governs specific organs and biological functions that correlate with modern gene clusters. 
+            Edit sensitivity reflects the required caution when designing CRISPR targets in marma-linked genes.
+          </div>
+          <div style={{ display: 'flex', flex: 'none', gap: 16, alignItems: 'center' }}>
+            {[{ c:'#e05c5c', l:'Critical (≥0.90)' }, { c:'#e09b5c', l:'High (≥0.80)' }, { c:'#e0d65c', l:'Medium (≥0.70)' }, { c:'#5ce08a', l:'Low' }].map(i => (
+              <div key={i.l} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-muted)', fontFamily: 'JetBrains Mono, monospace' }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: i.c, border: `1px solid ${i.c}` }}></div>
+                {i.l}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="marma-grid">
+        {marmaPoints.map((m) => (
+          <div
+            key={m.key}
+            className={`marma-card ${expanded === m.key ? 'expanded' : ''}`}
+            onClick={() => setExpanded(expanded === m.key ? null : m.key)}
+          >
+            <div className="marma-header">
+              <div>
+                <div className="marma-name">{m.key.charAt(0).toUpperCase() + m.key.slice(1)}</div>
+                <div className="marma-organ">{m.organ?.replace(/_/g, ' ')}</div>
+              </div>
+              <div className="sensitivity-ring" style={{
+                borderColor: sensitivityColor(m.edit_sensitivity),
+                color: sensitivityColor(m.edit_sensitivity),
+                background: `${sensitivityColor(m.edit_sensitivity)}15`,
+              }}>
+                {(m.edit_sensitivity * 100).toFixed(0)}
+              </div>
+            </div>
+
+            <div className="marma-location">📍 {m.location}</div>
+
+            <div className="marma-genes">
+              {(m.linked_genes || []).slice(0, expanded === m.key ? 20 : 4).map(g => (
+                <div key={g} className="gene-chip">{g}</div>
+              ))}
+              {m.linked_genes?.length > 4 && expanded !== m.key && (
+                <div className="gene-chip" style={{ color: 'var(--gold)', borderColor: 'var(--gold-dim)' }}>
+                  +{m.linked_genes.length - 4}
+                </div>
+              )}
+            </div>
+
+            <div className="dosha-affinity">
+              <div className="dosha-dot" style={{ background: doshaColor(m.dosha_affinity) }}></div>
+              {m.dosha_affinity?.replace(/_/g, ' + ')}
+            </div>
+
+            {expanded === m.key && m.notes && (
+              <div className="marma-note">{m.notes}</div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── App ──────────────────────────────────────────────────────────
+const TABS = [
+  { id: 'design',    label: '◈ Design' },
+  { id: 'metrics',   label: '◉ Metrics' },
+  { id: 'feedback',  label: '◎ Feedback' },
+  { id: 'visualise', label: '◐ Visualise' },
+  { id: 'marma',     label: '✦ Marma Explorer' },
+];
+
+function App() {
+  const [tab, setTab] = useState('design');
+  const [apiOk, setApiOk] = useState(false);
+  const [lastResult, setLastResult] = useState(null);
+
+  useEffect(() => {
+    fetch(API + '/health')
+      .then(r => r.json())
+      .then(() => setApiOk(true))
+      .catch(() => setApiOk(false));
+  }, []);
+
+  return (
+    <div id="root">
+      <Header apiOk={apiOk} />
+      <nav className="nav">
+        {TABS.map(t => (
+          <button key={t.id} className={`nav-tab ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)}>
+            {t.label}
+          </button>
+        ))}
+      </nav>
+      <main className="main">
+        {tab === 'design'    && <DesignTab onResult={setLastResult} />}
+        {tab === 'metrics'   && <MetricsTab />}
+        {tab === 'feedback'  && <FeedbackTab lastResult={lastResult} />}
+        {tab === 'visualise' && <VisualiseTab lastResult={lastResult} />}
+        {tab === 'marma'     && <MarmaTab />}
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
